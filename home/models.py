@@ -13,7 +13,7 @@ class UserManager(BaseUserManager):
             username = username,
             is_doctor=is_doctor,
             first_name=first_name,
-            last_name = last_name,     
+            last_name = last_name,
         )
         
         
@@ -21,32 +21,44 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self,email,username,password=None):
-        user=self.create_user(
+    # def create_superuser(self,email,username,password=None):
+    #     user=self.create_user(
+    #         email=self.normalize_email(email),
+    #         username=username,
+    #         password=password,
+    #     )
+    #     user.is_admin=True
+    #     user.is_active=True
+    #     user.is_superadmin=True
+        
+    #     user.save(using=self._db)
+    #     return user
+    def create_superuser(self, email, username, first_name="super", last_name="admin",password=None):
+        user = self.create_user(
             email=self.normalize_email(email),
             username=username,
             password=password,
+            first_name=first_name,
+            last_name=last_name,
         )
-        user.is_admin=True
-        user.is_active=True
-        user.is_staff=True
-        user.is_superadmin=True
+        user.is_admin = True
+        user.is_superadmin = True
         user.save(using=self._db)
         return user
     
     
 class UserData(AbstractBaseUser):
-    username=models.CharField(max_length=50,unique=True)
-    email=models.EmailField(max_length=100,unique=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
+    username=models.CharField(max_length=50,unique=True,null=True,blank=True)
+    email=models.EmailField(max_length=100,unique=True,null=True,blank=True)
+    first_name = models.CharField(max_length=50,null=True,blank=True)
+    last_name = models.CharField(max_length=50,null=True,blank=True)
     phone = models.CharField( max_length=50,null=True,blank=True)
     
     is_admin=models.BooleanField(default=False)    
-    is_staff=models.BooleanField(default=False)    
+    is_staff=models.BooleanField(default=False,null=True,blank=True)    
     is_active=models.BooleanField(default=True)   
     is_superadmin=models.BooleanField(default=False)    
-    is_doctor = models.BooleanField(default=False,null=True)
+    is_doctor = models.BooleanField(default=False)
    
 
 
@@ -60,6 +72,16 @@ class UserData(AbstractBaseUser):
     def __str__(self):
         return self.email
     
+    def has_perm(self, perm, obj=None):
+        # "Does the user have a specific permission?"
+        # Simplest possible answer: Yes, always
+        return True
+
+    def has_module_perms(self, app_label):
+        # "Does the user have permissions to view the app `app_label`?"
+        # Simplest possible answer: Yes, always
+        return True
+    
     
 
     @property
@@ -71,8 +93,8 @@ class UserData(AbstractBaseUser):
     
     
     
-# class DoctorProfile(models.Model):
-#     user = models.ForeignKey(UsersDetails, on_delete=models.CASCADE, related_name='doctorprofile')
-#     hospital = models.CharField(max_length=50,blank=True,null=True)
-#     department = models.CharField(max_length=50,null=True,blank=True)
-#     speciality = models.CharField(max_length=50,blank=True,null=True)
+class Doctor(models.Model):
+    user = models.ForeignKey(UserData, on_delete=models.CASCADE, related_name='doctorprofile')
+    hospital = models.CharField(max_length=50,blank=True,null=True)
+    department = models.CharField(max_length=50,null=True,blank=True)
+    is_verified = models.BooleanField(default=False)
