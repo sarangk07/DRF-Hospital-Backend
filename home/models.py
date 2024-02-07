@@ -94,7 +94,7 @@ class UserData(AbstractBaseUser):
     
     
 class Doctor(models.Model):
-    user = models.ForeignKey(UserData, on_delete=models.CASCADE, related_name='doctorprofile')
+    user = models.OneToOneField(UserData, on_delete=models.CASCADE, related_name='doctorprofile')
     hospital = models.CharField(max_length=50,blank=True,null=True)
     department = models.CharField(max_length=50,null=True,blank=True)
     is_verified = models.BooleanField(default=False)

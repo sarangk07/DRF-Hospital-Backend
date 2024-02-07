@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from home.serializer import RegistrationSerializer,AdminSerializer,DoctorSerializer,DoctorListSerializer,TokenSerializers,UsersSerializer,UpdateSerializer
+from home.serializer import RegistrationSerializer,AdminSerializer,DoctorProfileSerializer,TokenSerializers,UsersSerializer,UpdateSerializer
 from home.models import UserData,Doctor
 from rest_framework.response import Response
 from rest_framework import status
@@ -40,18 +40,6 @@ class Registration(APIView):
             return Response({'msg':'user created!'},status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
     
-    
-    
-    
-#     {
-#     "username" : "das",
-#     "email":"das@gmail.com",
-#     "first_name" : "das",
-#     "last_name":"n",
-#     "password":"Das123456",
-#     "confirm_password" : "Das123456",
-#     "is_doctor":0
-# }
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = TokenSerializers
@@ -90,13 +78,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
-class DoctorView(APIView):
-    def get(self,request):
-        doctors = UserData.objects.filter(is_doctor=True)
-        serializer = DoctorListSerializer(doctors, many=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)
-    
-        
+
 
  
 @permission_classes([IsAuthenticated])
@@ -104,7 +86,9 @@ class ProfileManagerView(APIView):
     
     def get(self, request ):
             user = UserData.objects.get(pk=request.user.id)
-            serializer = UsersSerializer(user)   
+            print(user)
+            serializer = UsersSerializer(user)  
+            print(serializer.data) 
             return Response({'msg':'user','data':serializer.data},status=status.HTTP_200_OK)
     
  
@@ -114,7 +98,7 @@ class ProfileManagerView(APIView):
             user = request.user
             if user.is_doctor:
                 doctor_profile = Doctor.objects.get(user=user)
-                doctor_serializer = DoctorSerializer(doctor_profile, data=request.data, partial=True)
+                doctor_serializer = DoctorProfileSerializer(doctor_profile, data=request.data, partial=True)
 
                 if 'first_name' in request.data:
                     user.first_name = request.data['first_name']
@@ -133,10 +117,10 @@ class ProfileManagerView(APIView):
                 user_profile = UserData.objects.get(id=request.user.id)
                 serializer = UsersSerializer(user_profile, data=request.data, partial=True)
 
+
                 if serializer.is_valid():
                     serializer.save()
                     return Response(serializer.data, status=status.HTTP_200_OK)
-
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except UserData.DoesNotExist:
             return Response({'detail': 'User profile not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -158,6 +142,7 @@ class ProfileManagerView(APIView):
     
     
 class AdminView(APIView):
+    
     permission_classes = [IsAdminUser]
     def get(self,request):
         user = UserData.objects.all()
