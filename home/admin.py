@@ -10,7 +10,7 @@ class DoctorAdmin(admin.ModelAdmin):
     list_display = ['id' , 'user' , ]
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username') 
+    list_display = ('id', 'username','is_doctor') 
 
 admin.site.register(UserData, UserAdmin)
 

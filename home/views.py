@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from home.serializer import RegistrationSerializer,AdminSerializer,DoctorProfileSerializer,TokenSerializers,UsersSerializer,UpdateSerializer
+from home.serializer import RegistrationSerializer,AdminSerializer,DoctorProfileSerializer,TokenSerializers,UsersSerializer,DoctorListSerializer
 from home.models import UserData,Doctor
 from rest_framework.response import Response
 from rest_framework import status
@@ -9,7 +9,27 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated,IsAdminUser 
 from rest_framework.decorators import permission_classes
- 
+
+
+
+
+# from rest_framework import generics
+
+# class BlockUserView(generics.UpdateAPIView):
+#     queryset = UserData.objects.all()
+#     serializer_class = AdminSerializer
+
+#     def perform_update(self, serializer):
+#         serializer.instance.is_blocked = True
+#         serializer.save()
+
+# class UnblockUserView(generics.UpdateAPIView):
+#     queryset = UserData.objects.all()
+#     serializer_class = AdminSerializer
+
+#     def perform_update(self, serializer):
+#         serializer.instance.is_blocked = False
+#         serializer.save()
 # Create your views here.
 
 class Registration(APIView):
@@ -34,50 +54,21 @@ class Registration(APIView):
                 last_name = last_name,
             
             )
+            print(user)
             if user.is_doctor:
                 Doctor.objects.create(user=user)
                 print("doctor created")
             return Response({'msg':'user created!'},status=status.HTTP_201_CREATED)
+        print("error")
         return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
     
+
+
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = TokenSerializers
 
 
-# class LoginView(APIView):
-    # def get(self,request,format=None):
-    #     requested_user={
-    #         "email":request.user.email,
-    #         "username": request.user.username,
-    #         "first_name": request.user.first_name,
-    #         "last_name": request.user.last_name
-    #     }
-    #     return Response(requested_user)
-    
-    # def post(self,request,format=None):
-    #     serializer = LoginSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         username = serializer.validated_data.get('username')
-    #         password = serializer.validated_data.get('password')
-    #         # user = authenticate(request, username=username, password=password)
-    #         user = authenticate(request, username=username, password=password)
-         
-    #         if user is not None:
-    #             print(user)
-    #             refresh = RefreshToken.for_user(user)
-    #             access_token = str(refresh.access_token)
-    #             refresh_token = str(refresh)
-    #             print("access_token",access_token)
-    #             print("refresh_token",refresh_token)
-    #             return Response({
-    #                 'access_token':access_token,
-    #                 'refresh_token':refresh_token,
-    #             },status=status.HTTP_200_OK)
-    #         return Response({"msg": "Doesn't exist. Or not found!"}, status=status.HTTP_204_NO_CONTENT) 
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    
 
 
  
@@ -89,43 +80,19 @@ class ProfileManagerView(APIView):
             print(user)
             serializer = UsersSerializer(user)  
             print(serializer.data) 
-            return Response({'msg':'user','data':serializer.data},status=status.HTTP_200_OK)
-    
- 
-    def patch(self, request):
-        try:
-            print(request.data)
-            user = request.user
-            if user.is_doctor:
-                doctor_profile = Doctor.objects.get(user=user)
-                doctor_serializer = DoctorProfileSerializer(doctor_profile, data=request.data, partial=True)
-
-                if 'first_name' in request.data:
-                    user.first_name = request.data['first_name']
-                if 'last_name' in request.data:
-                    user.last_name = request.data['last_name']
-                if 'phone' in request.data:
-                    user.phone = request.data['phone']
-                user.save()  
-                  
-                if doctor_serializer.is_valid():
-                    doctor_serializer.save()
-                    return Response(doctor_serializer.data, status=status.HTTP_200_OK)
-                else:
-                    return Response(doctor_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                user_profile = UserData.objects.get(id=request.user.id)
-                serializer = UsersSerializer(user_profile, data=request.data, partial=True)
-
-
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(serializer.data, status=status.HTTP_200_OK)
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except UserData.DoesNotExist:
-            return Response({'detail': 'User profile not found.'}, status=status.HTTP_404_NOT_FOUND)
-        except Doctor.DoesNotExist:
-            return Response({'detail': 'Doctor profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'msg':'user','data':serializer.data},status=status.HTTP_200_OK)    
+      
+        
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        data = request.data
+        
+        serializer = UsersSerializer(instance=user, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
     def delete(self,request):
@@ -137,13 +104,16 @@ class ProfileManagerView(APIView):
             return Response({'msg':'something wrong'},status=status.HTTP_400_BAD_REQUEST)
     
 
-    
-    
-    
-    
+
+  
 class AdminView(APIView):
-    
+
     permission_classes = [IsAdminUser]
+    
+    # serilaizer = DoctorProfileSerializer
+    # queryset = UserData.objects.filter(is_admin=False)
+    
+    
     def get(self,request):
         user = UserData.objects.all()
         serializer = AdminSerializer(user,many = True)
@@ -154,15 +124,46 @@ class AdminView(APIView):
         try:
             user = UserData.objects.get(id=pk)
             print(user)
-            print(user.is_active,'b4')
+            # print(user.is_active,'b4')
 
-            user.is_active = not user.is_active 
-            print(user.is_active)
+            # user.is_active = not user.is_active
+            user.is_blocked = not user.is_blocked 
+            # print(user.is_active)
+            print(user.is_blocked)
 
             user.save()
             serializer = AdminSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except UserData.DoesNotExist:
             return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)   
+        
+        
+ 
+ 
+class UserDoctorViews(APIView):
+        def get(self,request):
+            doctors = UserData.objects.filter(is_doctor=True)
+            serializer = DoctorListSerializer(doctors,many=True)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        
+        
+
+            
+        
+        
+    
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     
 

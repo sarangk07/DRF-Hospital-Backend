@@ -14,25 +14,16 @@ class UserManager(BaseUserManager):
             is_doctor=is_doctor,
             first_name=first_name,
             last_name = last_name,
+            
         )
-        
+        user.is_blocked = False
         
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    # def create_superuser(self,email,username,password=None):
-    #     user=self.create_user(
-    #         email=self.normalize_email(email),
-    #         username=username,
-    #         password=password,
-    #     )
-    #     user.is_admin=True
-    #     user.is_active=True
-    #     user.is_superadmin=True
-        
-    #     user.save(using=self._db)
-    #     return user
+
+
     def create_superuser(self, email, username, first_name="super", last_name="admin",password=None):
         user = self.create_user(
             email=self.normalize_email(email),
@@ -43,8 +34,10 @@ class UserManager(BaseUserManager):
         )
         user.is_admin = True
         user.is_superadmin = True
+        
         user.save(using=self._db)
         return user
+    
     
     
 class UserData(AbstractBaseUser):
@@ -54,11 +47,13 @@ class UserData(AbstractBaseUser):
     last_name = models.CharField(max_length=50,null=True,blank=True)
     phone = models.CharField( max_length=50,null=True,blank=True)
     
+    
     is_admin=models.BooleanField(default=False)    
     is_staff=models.BooleanField(default=False,null=True,blank=True)    
     is_active=models.BooleanField(default=True)   
     is_superadmin=models.BooleanField(default=False)    
     is_doctor = models.BooleanField(default=False)
+    is_blocked = models.BooleanField(default=False,blank=True)
    
 
 
@@ -81,7 +76,7 @@ class UserData(AbstractBaseUser):
         # "Does the user have permissions to view the app `app_label`?"
         # Simplest possible answer: Yes, always
         return True
-    
+      
     
 
     @property

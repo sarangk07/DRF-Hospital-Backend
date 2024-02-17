@@ -42,11 +42,17 @@ INSTALLED_APPS = [
     
     "home",
     "rest_framework",
-    'rest_framework_simplejwt',
+    "rest_framework_simplejwt",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    
+    "corsheaders.middleware.CorsMiddleware",
+    
+    
+    
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -141,8 +147,19 @@ REST_FRAMEWORK = {
 # ]
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=3),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=6),
     "ROTATE_REFRESH_TOKENS": True,
     'SIGNING_KEY': SECRET_KEY,
+    
+    "AUTH_HEADER_TYPES":('Bearer',),
+    "AUTH_HEADER_NAME":'HTTP_AUTHORIZATION',
 
 }
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+
+# CORS_ALLOW_ALL_ORIGINS: True
